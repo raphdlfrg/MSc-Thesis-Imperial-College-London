@@ -25,3 +25,4 @@ RANDOM_SEED = 42
 # ---------------------------------------
 
 VALIDATION_SIZE = 0.10
+PATIENCE_EARLY_STOPPING = 10

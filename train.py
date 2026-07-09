@@ -8,8 +8,9 @@ from sklearn.preprocessing import StandardScaler
 from torch.utils.data import DataLoader, TensorDataset
 import pandas as pd
 from tqdm import tqdm
+import copy
 
-from config import CVA_DATASET, NN_PREDICTIONS_PATH, NN_TRAINING_PATH, VALIDATION_SIZE
+from config import CVA_DATASET, NN_PREDICTIONS_PATH, NN_TRAINING_PATH, PATIENCE_EARLY_STOPPING, VALIDATION_SIZE
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"Using {device} device")
@@ -87,7 +88,7 @@ optimizer = torch.optim.Adam(
 )
 
 
-epochs = 1000
+epochs = 100
 
 def train_one_epoch(model, train_loader, loss_fn, optimizer):
     model.train()
@@ -118,17 +119,33 @@ def validate(model, validation_loader, loss_fn):
 
 training_losses = []
 validation_losses = []
+best_validation_loss = float('inf')
+best_model_state = None
+patience_counter = 0
 
 for epoch in tqdm(range(epochs), desc="Training"):
     train_loss = train_one_epoch(model, train_loader, loss_fn, optimizer)
     validation_loss = validate(model, validation_loader, loss_fn)
     training_losses.append(train_loss)
     validation_losses.append(validation_loss)
+    if validation_loss < best_validation_loss:
+        best_validation_loss = validation_loss
+        best_model_state = copy.deepcopy(model.state_dict())
+        patience_counter = 0
+    else:
+        patience_counter += 1
+    if patience_counter >= PATIENCE_EARLY_STOPPING:
+        print(f"Early stopping at epoch {epoch+1} due to no improvement in validation loss.")
+        break
 
     if epoch % 512 == 0 or epoch == epochs - 1:
         print(f"Epoch {epoch+1} - Train Loss: {train_loss:.6f}, Validation Loss: {validation_loss:.6f}")
 
 
+if best_model_state is not None:
+    model.load_state_dict(best_model_state)
+
+    
 loss_df = pd.DataFrame({
     "epoch": range(1, epochs + 1),
     "train_loss": training_losses,
