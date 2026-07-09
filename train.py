@@ -9,6 +9,8 @@ from torch.utils.data import DataLoader, TensorDataset
 import pandas as pd
 from tqdm import tqdm
 
+from config import CVA_DATASET, NN_PREDICTIONS_PATH, NN_TRAINING_PATH, VALIDATION_SIZE
+
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"Using {device} device")
 
@@ -21,12 +23,12 @@ torch.manual_seed(SEED)
 if torch.cuda.is_available():
     torch.cuda.manual_seed_all(SEED)
 
-df = pd.read_csv("data/black_cox_cva_control_timing_results.csv")
+df = pd.read_csv(CVA_DATASET)
 
 X, Y = df.iloc[:, :6].values, df.iloc[:, 6].values
 
 
-X_train, X_validation, Y_train, Y_validation = train_test_split(X, Y, test_size=0.1, random_state=SEED, shuffle=True)
+X_train, X_validation, Y_train, Y_validation = train_test_split(X, Y, test_size=VALIDATION_SIZE, random_state=SEED, shuffle=True)
 
 scaler_X = StandardScaler()
 X_train = scaler_X.fit_transform(X_train)
@@ -133,11 +135,11 @@ loss_df = pd.DataFrame({
     "validation_loss": validation_losses
 })
 
-loss_df.to_csv("data/nn_training.csv", index=False)
+loss_df.to_csv(NN_TRAINING_PATH, index=False)
 
 prediction_df = pd.DataFrame({
     "Predicted_CVA": model(X_validation.to(device)).detach().cpu().numpy() * scaler_Y.scale_ + scaler_Y.mean_,
     "True_CVA": Y_validation.detach().cpu().numpy() * scaler_Y.scale_ + scaler_Y.mean_
 })
 
-prediction_df.to_csv("data/nn_predictions.csv", index=False)
+prediction_df.to_csv(NN_PREDICTIONS_PATH, index=False)

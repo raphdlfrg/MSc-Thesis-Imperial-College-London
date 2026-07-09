@@ -6,16 +6,12 @@ import os
 from tqdm import tqdm
 from scipy.stats import qmc
 
-
-# -----------------------
-# LHS parameters
-# -----------------------
-
-N_LHS_SAMPLES = 200000
-BASE_SEED = 42
+from config import N_LHS_SAMPLES, RANDOM_SEED, CVA_DATASET
 
 
-def make_lhs_parameter_sample(n_samples, seed=42):
+
+
+def make_lhs_parameter_sample(n_samples, seed=RANDOM_SEED):
 
     lower_bound = np.array([0.4, 0.75, 0.15, 0.10, 0, -0.75])
     upper_bound = np.array([0.9, 1.4, 0.8, 0.50, 0.1, 0.75])
@@ -27,11 +23,11 @@ def make_lhs_parameter_sample(n_samples, seed=42):
     return pd.DataFrame(scaled_sample, columns=["L_over_V0", "S0_over_K", "sigma_s", "sigma_v", "mu_v", "rho"])
 
 
-parameter_df = make_lhs_parameter_sample(n_samples=N_LHS_SAMPLES, seed=BASE_SEED)
+parameter_df = make_lhs_parameter_sample(n_samples=N_LHS_SAMPLES, seed=RANDOM_SEED)
 print("Number of parameter sets:", len(parameter_df))
 
 PATH = "data/black_cox_cva_no_control_timing_results.csv"
-CONTROL_PATH = "data/black_cox_cva_control_timing_results.csv"
+
 
 os.makedirs("data", exist_ok=True)
 
@@ -102,9 +98,9 @@ else:
 # Control variate timing
 # -----------------------
 
-if os.path.exists(CONTROL_PATH):
-    print(f"Timing dataset already exists at {CONTROL_PATH}. Loading...")
-    control_timing_df = pd.read_csv(CONTROL_PATH)
+if os.path.exists(CVA_DATASET):
+    print(f"Timing dataset already exists at {CVA_DATASET}. Loading...")
+    control_timing_df = pd.read_csv(CVA_DATASET)
 
 else:
     results = []
@@ -139,7 +135,7 @@ else:
                     n_paths=n_paths,
                     n_steps=n_steps,
                     recovery_rate=0.4,
-                    seed=BASE_SEED + i,
+                    seed=RANDOM_SEED + i,
                 )
 
                 end = time.perf_counter()
@@ -165,7 +161,7 @@ else:
                         "elapsed_time_seconds": elapsed_time,
                         "n_paths": n_paths,
                         "n_steps": n_steps,
-                        "seed": BASE_SEED + i,
+                        "seed": RANDOM_SEED + i,
                     })
             '''results.append({
             "n_paths": n_paths,
@@ -178,8 +174,8 @@ else:
         })'''
 
     control_timing_df = pd.DataFrame(rows)
-    control_timing_df.to_csv(CONTROL_PATH, index=False)
-    print(f"Saved to {CONTROL_PATH}")
+    control_timing_df.to_csv(CVA_DATASET, index=False)
+    print(f"Saved to {CVA_DATASET}")
 
     '''results_df = pd.DataFrame(results)
     results_df.to_csv("data/MC_parameters_tables.csv", index=False)
