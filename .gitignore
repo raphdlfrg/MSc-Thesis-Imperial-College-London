@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+
+.env
+venv/
+
+saved_models/
+checkpoints/
+
+*.pth
+*.pt
+
+data/
+
+.ipynb_checkpoints/
