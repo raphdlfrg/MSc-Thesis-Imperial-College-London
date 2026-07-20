@@ -138,7 +138,7 @@ for epoch in tqdm(range(epochs), desc="Training"):
         print(f"Early stopping at epoch {epoch+1} due to no improvement in validation loss.")
         break
 
-    if epoch % 512 == 0 or epoch == epochs - 1:
+    if epoch % 5 == 0 or epoch == epochs - 1:
         print(f"Epoch {epoch+1} - Train Loss: {train_loss:.6f}, Validation Loss: {validation_loss:.6f}")
 
 
@@ -147,7 +147,7 @@ if best_model_state is not None:
 
     
 loss_df = pd.DataFrame({
-    "epoch": range(1, epochs + 1),
+    "epoch": range(1, len(training_losses) + 1),
     "train_loss": training_losses,
     "validation_loss": validation_losses
 })
