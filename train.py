@@ -154,9 +154,18 @@ loss_df = pd.DataFrame({
 
 loss_df.to_csv(NN_TRAINING_PATH, index=False)
 
+model.eval()
+
+with torch.no_grad():
+    predicted_scaled = model(X_validation.to(device)).cpu().numpy()
+
+predicted_cva = (predicted_scaled * scaler_Y.scale_ + scaler_Y.mean_).ravel()
+
+true_cva = (Y_validation.cpu().numpy() * scaler_Y.scale_ + scaler_Y.mean_).ravel()
+
 prediction_df = pd.DataFrame({
-    "Predicted_CVA": model(X_validation.to(device)).detach().cpu().numpy() * scaler_Y.scale_ + scaler_Y.mean_,
-    "True_CVA": Y_validation.detach().cpu().numpy() * scaler_Y.scale_ + scaler_Y.mean_
+    "Predicted_CVA": predicted_cva,
+    "True_CVA": true_cva
 })
 
 prediction_df.to_csv(NN_PREDICTIONS_PATH, index=False)
