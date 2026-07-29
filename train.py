@@ -208,12 +208,7 @@ for config in architectures:
     training_result = train_model(
         model=model,
         train_loader=train_loader,
-        validation_loader=validation_loader,
-        device=device,
-        learning_rate=config["learning_rate"],
-        max_epochs=200,
-        patience=10,
-        min_delta=1e-6
+        validation_loader=validation_loader
     )
 
     number_parameters = sum(
@@ -233,7 +228,8 @@ for config in architectures:
         "best_validation_loss":
             training_result["best_validation_loss"],
         "best_validation_rmse":
-            training_result["best_validation_rmse"]
+            training_result["best_validation_rmse"],
+        "number_parameters": number_parameters
     })
 
     trained_models[config["name"]] = training_result["model"]
