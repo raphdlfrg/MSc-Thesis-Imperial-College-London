@@ -151,7 +151,7 @@ def train_model(model, train_loader, validation_loader, loss_fn=nn.MSELoss(), lr
         "model": model,
         "history": {"training_losses": training_losses, "validation_losses": validation_losses},
         "best_validation_loss": best_validation_loss,
-        "best_model_rmse": np.sqrt(best_validation_loss),
+        "best_validation_rmse": np.sqrt(best_validation_loss),
         "best_epoch": int(np.argmin(validation_losses)) + 1,
         "epochs_trained": len(training_losses)
     }
