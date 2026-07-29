@@ -9,6 +9,7 @@ from torch.utils.data import DataLoader, TensorDataset
 import pandas as pd
 from tqdm import tqdm
 import copy
+from itertools import product
 
 from config import CVA_DATASET, NN_PREDICTIONS_PATH, NN_TRAINING_PATH, PATIENCE_EARLY_STOPPING, VALIDATION_SIZE, RANDOM_SEED
 
@@ -48,16 +49,6 @@ validation_dataset = TensorDataset(X_validation, Y_validation)
 print(X_train.shape, Y_train.shape)
 print(X_validation.shape, Y_validation.shape)
 
-train_loader = DataLoader(
-    training_dataset,
-    batch_size=512,
-    shuffle=True,
-)
-validation_loader = DataLoader(
-    validation_dataset,
-    batch_size=4096,
-    shuffle=False,
-)
 
 class NeuralNetwork(nn.Module):
     def __init__(self, input_size=6, hidden_sizes=(64, 64), activation_fn=nn.ELU):
@@ -156,28 +147,11 @@ def train_model(model, train_loader, validation_loader, loss_fn=nn.MSELoss(), lr
         "epochs_trained": len(training_losses)
     }
 
+
 architectures = [
     {
-        "name": "1_layer_64",
-        "hidden_sizes": [64],
-        "activation": "elu",
-        "learning_rate": 1e-3
-    },
-    {
-        "name": "1_layer_128",
-        "hidden_sizes": [128],
-        "activation": "elu",
-        "learning_rate": 1e-3
-    },
-    {
-        "name": "2_layers_64_64",
-        "hidden_sizes": [64, 64],
-        "activation": "elu",
-        "learning_rate": 1e-3
-    },
-    {
-        "name": "2_layers_128_64",
-        "hidden_sizes": [128, 64],
+        "name": "3_layers_64_64_64",
+        "hidden_sizes": [64, 64, 64],
         "activation": "elu",
         "learning_rate": 1e-3
     },
@@ -189,12 +163,21 @@ architectures = [
     }
 ]
 
+name = "3_layers_128_64_32"
+
+learning_rates = [3e-4, 1e-3, 5e-3, 1e-2]
+batch_sizes = [128, 256, 512]
+
+hidden_sizes = [128, 64, 32]
+seed = RANDOM_SEED
+
+
 results = []
 trained_models = {}
 training_histories = {}
 
-for config in architectures:
-    print(f"Training: {config['name']}")
+for lr, batch_size in product(learning_rates, batch_sizes):
+    print(f"Training model with architecture: {hidden_sizes}, learning rate: {lr}, batch size: {batch_size}")
 
     #We reset the random seeds for reproducibility (so each architecture starts from the same initial weights)
     random.seed(RANDOM_SEED)
@@ -203,12 +186,26 @@ for config in architectures:
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(RANDOM_SEED)
 
-    model = NeuralNetwork(input_size=6, hidden_sizes=config["hidden_sizes"]).to(device)
+
+    train_loader = DataLoader(
+    training_dataset,
+    batch_size=batch_size,
+    shuffle=True,
+    )
+    validation_loader = DataLoader(
+        validation_dataset,
+        batch_size=4096,
+        shuffle=False,
+    )
+
+
+    model = NeuralNetwork(input_size=6, hidden_sizes=hidden_sizes).to(device)
 
     training_result = train_model(
         model=model,
         train_loader=train_loader,
-        validation_loader=validation_loader
+        validation_loader=validation_loader,
+        lr=lr
     )
 
     number_parameters = sum(
@@ -218,10 +215,10 @@ for config in architectures:
     )
 
     results.append({
-        "name": config["name"],
-        "hidden_sizes": str(config["hidden_sizes"]),
-        "activation": config["activation"],
-        "learning_rate": config["learning_rate"],
+        "name": name,
+        "hidden_sizes": str(hidden_sizes),
+        "activation": "elu",
+        "learning_rate": lr,
         "parameters": number_parameters,
         "best_epoch": training_result["best_epoch"],
         "epochs_trained": training_result["epochs_trained"],
@@ -232,8 +229,8 @@ for config in architectures:
         "number_parameters": number_parameters
     })
 
-    trained_models[config["name"]] = training_result["model"]
-    training_histories[config["name"]] = training_result["history"]
+    trained_models["name"] = training_result["model"]
+    training_histories["name"] = training_result["history"]
 
 results_df = pd.DataFrame(results)
 results_df = results_df.sort_values(by="best_validation_rmse").reset_index(drop=True)
@@ -242,7 +239,7 @@ print(results_df)
 best_model_name = results_df.loc[0, "name"]
 best_model = trained_models[best_model_name]
 
-print(f"Best architecture: {best_model_name}")
+print(f"Best combination: {best_model_name}")
 
 
 '''
