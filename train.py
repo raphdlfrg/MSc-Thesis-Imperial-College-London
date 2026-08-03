@@ -248,18 +248,6 @@ print(f"Best combination: {best_model_name}")
 best_model_training_losses = training_histories[best_model_name]["training_losses"]
 best_model_validation_losses = training_histories[best_model_name]["validation_losses"]
 
-train_loader = DataLoader(
-    training_dataset,
-    batch_size=batch_size,
-    shuffle=True,
-)
-
-validation_loader = DataLoader(
-    validation_dataset,
-    batch_size=4096,
-    shuffle=False,
-)
-
 
 loss_df = pd.DataFrame({
     "epoch": range(1, len(best_model_training_losses) + 1),
