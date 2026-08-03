@@ -179,6 +179,8 @@ training_histories = {}
 for lr, batch_size in product(learning_rates, batch_sizes):
     print(f"Training model with architecture: {hidden_sizes}, learning rate: {lr}, batch size: {batch_size}")
 
+    config_id = f"hidden_sizes_{hidden_sizes}_lr_{lr}_batch_size_{batch_size}"
+
     #We reset the random seeds for reproducibility (so each architecture starts from the same initial weights)
     random.seed(RANDOM_SEED)
     np.random.seed(RANDOM_SEED)
@@ -215,6 +217,7 @@ for lr, batch_size in product(learning_rates, batch_sizes):
     )
 
     results.append({
+        "config_id": config_id,
         "name": name,
         "hidden_sizes": str(hidden_sizes),
         "activation": "elu",
@@ -230,8 +233,8 @@ for lr, batch_size in product(learning_rates, batch_sizes):
         "number_parameters": number_parameters
     })
 
-    trained_models["name"] = training_result["model"]
-    training_histories["name"] = training_result["history"]
+    trained_models[config_id] = training_result["model"]
+    training_histories[config_id] = training_result["history"]
 
 results_df = pd.DataFrame(results)
 results_df = results_df.sort_values(by="best_validation_rmse").reset_index(drop=True)
@@ -239,14 +242,14 @@ print(results_df)
 
 results_df.to_csv(NN_ARCHITECTURE_RESULTS_PATH, index=False)
 
-best_model_name = results_df.loc[0, "name"]
-best_model = trained_models[best_model_name]
+best_config = results_df.loc[0, "config_id"]
+best_model = trained_models[best_config]
 
-print(f"Best combination: {best_model_name}")
+print(f"Best combination: {best_config}")
 
 
-best_model_training_losses = training_histories[best_model_name]["training_losses"]
-best_model_validation_losses = training_histories[best_model_name]["validation_losses"]
+best_model_training_losses = training_histories[best_config]["training_losses"]
+best_model_validation_losses = training_histories[best_config]["validation_losses"]
 
 
 loss_df = pd.DataFrame({
