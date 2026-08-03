@@ -11,7 +11,7 @@ from tqdm import tqdm
 import copy
 from itertools import product
 
-from config import CVA_DATASET, NN_PREDICTIONS_PATH, NN_TRAINING_PATH, PATIENCE_EARLY_STOPPING, VALIDATION_SIZE, RANDOM_SEED
+from config import CVA_DATASET, NN_PREDICTIONS_PATH, NN_TRAINING_PATH, PATIENCE_EARLY_STOPPING, VALIDATION_SIZE, RANDOM_SEED, NN_ARCHITECTURE_RESULTS_PATH
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"Using {device} device")
@@ -106,7 +106,7 @@ def validate(model, validation_loader, loss_fn):
             running_loss += loss.item()
     return running_loss / len(validation_loader)
 
-def train_model(model, train_loader, validation_loader, loss_fn=nn.MSELoss(), lr=1e-3, max_epochs=200):
+def train_model(model, train_loader, validation_loader, loss_fn=nn.MSELoss(), lr=1e-3, delta=1e-6, max_epochs=200):
     training_losses = []
     validation_losses = []
     best_validation_loss = float('inf')
@@ -122,7 +122,7 @@ def train_model(model, train_loader, validation_loader, loss_fn=nn.MSELoss(), lr
         validation_loss = validate(model, validation_loader, loss_fn)
         training_losses.append(train_loss)
         validation_losses.append(validation_loss)
-        if validation_loss < best_validation_loss:
+        if validation_loss < best_validation_loss - delta:
             best_validation_loss = validation_loss
             best_model_state = copy.deepcopy(model.state_dict())
             patience_counter = 0
@@ -219,6 +219,7 @@ for lr, batch_size in product(learning_rates, batch_sizes):
         "hidden_sizes": str(hidden_sizes),
         "activation": "elu",
         "learning_rate": lr,
+        "batch_size": batch_size,
         "parameters": number_parameters,
         "best_epoch": training_result["best_epoch"],
         "epochs_trained": training_result["epochs_trained"],
@@ -236,25 +237,42 @@ results_df = pd.DataFrame(results)
 results_df = results_df.sort_values(by="best_validation_rmse").reset_index(drop=True)
 print(results_df)
 
+results_df.to_csv(NN_ARCHITECTURE_RESULTS_PATH, index=False)
+
 best_model_name = results_df.loc[0, "name"]
 best_model = trained_models[best_model_name]
 
 print(f"Best combination: {best_model_name}")
 
 
-'''
+best_model_training_losses = training_histories[best_model_name]["training_losses"]
+best_model_validation_losses = training_histories[best_model_name]["validation_losses"]
+
+train_loader = DataLoader(
+    training_dataset,
+    batch_size=batch_size,
+    shuffle=True,
+)
+
+validation_loader = DataLoader(
+    validation_dataset,
+    batch_size=4096,
+    shuffle=False,
+)
+
+
 loss_df = pd.DataFrame({
-    "epoch": range(1, len(training_losses) + 1),
-    "train_loss": training_losses,
-    "validation_loss": validation_losses
+    "epoch": range(1, len(best_model_training_losses) + 1),
+    "train_loss": best_model_training_losses,
+    "validation_loss": best_model_validation_losses
 })
 
 loss_df.to_csv(NN_TRAINING_PATH, index=False)
 
-model.eval()
+best_model.eval()
 
 with torch.no_grad():
-    predicted_scaled = model(X_validation.to(device)).cpu().numpy()
+    predicted_scaled = best_model(X_validation.to(device)).cpu().numpy()
 
 predicted_cva = (predicted_scaled * scaler_Y.scale_ + scaler_Y.mean_).ravel()
 
@@ -266,4 +284,3 @@ prediction_df = pd.DataFrame({
 })
 
 prediction_df.to_csv(NN_PREDICTIONS_PATH, index=False)
-'''

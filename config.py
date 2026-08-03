@@ -16,6 +16,7 @@ NN_RESULTS_PREDICTIONS_WITH_ERRORS = ROOT / "nn_results_predictions_with_errors.
 NN_ERROR_BY_CVA = ROOT / "error_by_cva_quantile.csv"
 CALIBRATION_BY_DECILE = ROOT / "calibration_by_decile.csv"
 VALIDATION_PLOTS_PATH = ROOT / "validation_plots.png"
+NN_ARCHITECTURE_RESULTS_PATH = ROOT / "nn_architecture_results.csv"
 # ---------------------------------------
 # Synthetic Dataset Generation Parameters 
 # ---------------------------------------
