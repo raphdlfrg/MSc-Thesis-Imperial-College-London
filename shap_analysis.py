@@ -26,6 +26,8 @@ model = NeuralNetwork(
 )
 
 model.load_state_dict(checkpoint["model_state_dict"])
+
+model = model.to(device)
 model.eval()
 
 
