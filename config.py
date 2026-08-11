@@ -24,6 +24,7 @@ NN_MODEL_PATH = ROOT / "nn_model.pth"
 NN_SCALERS_PATH = ROOT / "nn_scalers.pkl"
 
 SHAP_GLOBAL_IMPORTANCE_PATH = ROOT / "shap_global_importance.csv"
+SHAP_GLOBAL_IMPORTANCE_PLOT_PATH = ROOT / "shap_global_importance.png"
 SHAP_BEESWARM_PATH = ROOT / "shap_beeswarm.png"
 SHAP_WATERFALL_PATH = ROOT / "shap_waterfall.png"
 # ---------------------------------------
