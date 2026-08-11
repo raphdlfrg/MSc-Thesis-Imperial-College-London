@@ -40,7 +40,7 @@ Y_test = pd.read_csv(CVA_TEST_DATASET).iloc[:, 6].values
 
 X_train, X_validation, Y_train, Y_validation = train_test_split(X, Y, test_size=VALIDATION_SIZE, random_state=RANDOM_SEED, shuffle=True)
 
-rng = np.random_default_rng(RANDOM_SEED)
+rng = np.random.default_rng(RANDOM_SEED)
 
 background_indices = rng.choice(len(X_train), size=BACKGROUND_SIZE, replace=False)
 
