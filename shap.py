@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-checkpoint = torch.load(NN_MODEL_PATH)
+checkpoint = torch.load(NN_MODEL_PATH, weights_only=False, map_location=device)
 
 X_scaler = joblib.load("scalers.pkl")["scaler_X"]
 Y_scaler = joblib.load("scalers.pkl")["scaler_Y"]
