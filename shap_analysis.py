@@ -16,8 +16,8 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 checkpoint = torch.load(NN_MODEL_PATH, weights_only=False, map_location=device)
 
-X_scaler = joblib.load("scalers.pkl")["scaler_X"]
-Y_scaler = joblib.load("scalers.pkl")["scaler_Y"]
+X_scaler = joblib.load("nn_scalers.pkl")["scaler_X"]
+Y_scaler = joblib.load("nn_scalers.pkl")["scaler_Y"]
 
 model = NeuralNetwork(
     input_size=checkpoint["input_size"],
