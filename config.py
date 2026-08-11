@@ -9,6 +9,7 @@ else:
     ROOT = Path("data")
 
 CVA_DATASET = ROOT / "black_cox_cva_control_timing_results.csv"
+CVA_TEST_DATASET = ROOT / "black_cox_cva_control_timing_test_results.csv"
 
 NN_EPOCHS_LOSS_PATH = ROOT / "nn_epochs_loss.csv"
 NN_PREDICTIONS_PATH = ROOT / "nn_predictions.csv"
@@ -34,3 +35,10 @@ RANDOM_SEED = 42
 
 VALIDATION_SIZE = 0.10
 PATIENCE_EARLY_STOPPING = 10
+
+# ---------------------------------------
+# SHAP Parameters
+# ---------------------------------------
+
+BACKGROUND_SIZE = 500
+EXPLANATION_SIZE = 5000
