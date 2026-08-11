@@ -1,5 +1,5 @@
 
-from config import NN_MODEL_PATH, CVA_DATASET, CVA_TEST_DATASET, VALIDATION_SIZE, RANDOM_SEED, BACKGROUND_SIZE, EXPLANATION_SIZE, NN_SCALERS_PATH
+from config import NN_MODEL_PATH, CVA_DATASET, CVA_TEST_DATASET, SHAP_GLOBAL_IMPORTANCE_PATH, SHAP_WATERFALL_PATH, SHAP_BEESWARM_PATH, VALIDATION_SIZE, RANDOM_SEED, BACKGROUND_SIZE, EXPLANATION_SIZE, NN_SCALERS_PATH
 from model import NeuralNetwork 
 import torch 
 import torch.nn as nn
@@ -63,75 +63,31 @@ print(shap_values_scaled.shape)
 
 # A voir, la suite pour tester les shapes c'est pas forcément nécessaire
 
-if isinstance(shap_values_scaled, list):
-    shap_values_scaled = shap_values_scaled[0]
+shap_values_scaled = np.squeeze(shap_values_scaled, axis=-1)
 
-shap_values_scaled = np.asarray(
-    shap_values_scaled
-)
-
-# Some SHAP versions return:
-# (n_observations, n_features, 1)
-if (
-    shap_values_scaled.ndim == 3
-    and shap_values_scaled.shape[-1] == 1
-):
-    shap_values_scaled = (
-        shap_values_scaled[:, :, 0]
-    )
-
-if shap_values_scaled.ndim != 2:
-    raise ValueError(
-        "Unexpected SHAP array shape: "
-        f"{shap_values_scaled.shape}"
-    )
 
 Y_scale = float(Y_scaler.scale_[0])
 Y_mean = float(Y_scaler.mean_[0])
 
 shap_values = shap_values_scaled * Y_scale
 
-expected_value_scaled = np.asarray(explainer.expected_value).reshape(-1)[0]
+expected_value_scaled = float(np.asarray(explainer.expected_value).reshape(-1)[0])
 
 expected_value = expected_value_scaled * Y_scale + Y_mean
 
 with torch.no_grad():
-    Y_pred_scaled = model(X_explanation_tensor).cpu().numpy()
+    Y_pred_scaled = model(X_explanation_tensor).cpu().numpy().reshape(-1)
 
-predictions_cva = Y_pred_scaled * Y_scale + Y_mean
+predictions_cva = (Y_pred_scaled * Y_scale + Y_mean).reshape(-1)
 
+reconstructed_predictions = (expected_value + shap_values.sum(axis=1))
 
+additivity_error = np.abs(predictions_cva - reconstructed_predictions)
 
-explanation = shap.Explanation(
-    values=shap_values,
-    base_values=np.full(len(X_explanation), expected_value),
-    data=X_explanation,
-    feature_names=feature_names
-)
+print("Mean additivity error:", additivity_error.mean())
+print("Maximum additivity error:", additivity_error.max())
 
-reconstructed_predictions = (
-    expected_value
-    + shap_values.sum(axis=1)
-)
-
-additivity_error = np.abs(
-    predictions_cva
-    - reconstructed_predictions
-)
-
-print(
-    "Mean additivity error:",
-    additivity_error.mean()
-)
-
-print(
-    "Maximum additivity error:",
-    additivity_error.max()
-)
-
-mean_absolute_shap = np.abs(
-    shap_values
-).mean(axis=0)
+mean_absolute_shap = np.abs(shap_values).mean(axis=0)
 
 global_importance = pd.DataFrame({
     "Feature": feature_names,
@@ -144,104 +100,59 @@ global_importance["Importance_Percent"] = (
     / global_importance["Mean_Absolute_SHAP"].sum()
 )
 
-global_importance = (
-    global_importance
-    .sort_values(
-        "Mean_Absolute_SHAP",
-        ascending=False
-    )
-    .reset_index(drop=True)
-)
+global_importance = (global_importance.sort_values("Mean_Absolute_SHAP", ascending=False).reset_index(drop=True))
 
 print("\nGlobal SHAP importance:")
 print(global_importance)
 
-global_importance.to_csv(
-    "shap_global_importance.csv",
-    index=False
-)
+global_importance.to_csv(SHAP_GLOBAL_IMPORTANCE_PATH, index=False)
 
-plot_importance = global_importance.sort_values(
-    "Mean_Absolute_SHAP",
-    ascending=True
-)
+plot_importance = global_importance.sort_values("Mean_Absolute_SHAP", ascending=True)
 
 plt.figure(figsize=(8, 5))
 
-plt.barh(
-    plot_importance["Feature"],
-    plot_importance["Mean_Absolute_SHAP"],
-    color="steelblue"
-)
+plt.barh(plot_importance["Feature"], plot_importance["Mean_Absolute_SHAP"], color="steelblue")
 
 plt.xlabel("Mean absolute SHAP value (CVA units)")
 plt.ylabel("Feature")
 plt.title("Global SHAP Feature Importance")
 plt.tight_layout()
 
-plt.savefig(
-    "shap_global_importance.png",
-    dpi=300,
-    bbox_inches="tight"
-)
+plt.savefig("shap_global_importance.png", dpi=300, bbox_inches="tight")
 
 plt.show()
 
-
-shap.plots.beeswarm(
-    explanation,
-    max_display=len(feature_names),
-    show=False
+explanation = shap.Explanation(
+    values=shap_values,
+    base_values=np.full(len(X_explanation), expected_value),
+    data=X_explanation,
+    feature_names=feature_names
 )
+
+shap.plots.beeswarm(explanation, max_display=len(feature_names), show=False)
 
 plt.xlabel("SHAP value — impact on predicted CVA")
 plt.tight_layout()
 
-plt.savefig(
-    "shap_beeswarm.png",
-    dpi=300,
-    bbox_inches="tight"
-)
+plt.savefig(SHAP_BEESWARM_PATH, dpi=300, bbox_inches="tight")
 
 plt.show()
 
 
-waterfall_index = int(
-    np.argmax(predictions_cva)
-)
+waterfall_index = int(np.argmax(predictions_cva))
 
-print(
-    "\nWaterfall observation index:",
-    waterfall_index
-)
+print("\nWaterfall observation index:", waterfall_index)
 
-print(
-    "Predicted CVA:",
-    predictions_cva[waterfall_index]
-)
+print("Predicted CVA:", predictions_cva[waterfall_index])
 
-print(
-    "True CVA:",
-    Y_test[waterfall_index]
-)
+print("True CVA:", Y_test[waterfall_index])
 
-print(
-    "Baseline predicted CVA:",
-    expected_value
-)
+print("Baseline predicted CVA:", expected_value)
 
-shap.plots.waterfall(
-    explanation[waterfall_index],
-    max_display=len(feature_names),
-    show=False
-)
+shap.plots.waterfall(explanation[waterfall_index], max_display=len(feature_names), show=False)
 
 plt.tight_layout()
 
-plt.savefig(
-    "shap_waterfall.png",
-    dpi=300,
-    bbox_inches="tight"
-)
+plt.savefig(SHAP_WATERFALL_PATH, dpi=300, bbox_inches="tight")
 
 plt.show()
