@@ -1,5 +1,5 @@
 
-from config import NN_MODEL_PATH, CVA_DATASET, CVA_TEST_DATASET, SHAP_GLOBAL_IMPORTANCE_PATH, SHAP_WATERFALL_PATH, SHAP_BEESWARM_PATH, VALIDATION_SIZE, RANDOM_SEED, BACKGROUND_SIZE, EXPLANATION_SIZE, NN_SCALERS_PATH
+from config import NN_MODEL_PATH, CVA_DATASET, CVA_TEST_DATASET, SHAP_GLOBAL_IMPORTANCE_PATH, SHAP_GLOBAL_IMPORTANCE_PLOT_PATH, SHAP_WATERFALL_PATH, SHAP_BEESWARM_PATH, VALIDATION_SIZE, RANDOM_SEED, BACKGROUND_SIZE, EXPLANATION_SIZE, NN_SCALERS_PATH
 from model import NeuralNetwork 
 import torch 
 import torch.nn as nn
@@ -50,6 +50,7 @@ explanation_indices = rng.choice(len(X_test), size=EXPLANATION_SIZE, replace=Fal
 
 X_background = X_train[background_indices]
 X_explanation = X_test[explanation_indices]
+Y_explanation = Y_test[explanation_indices]
 
 X_background_tensor = torch.tensor(X_scaler.transform(X_background), dtype=torch.float32, device=device)
 X_explanation_tensor = torch.tensor(X_scaler.transform(X_explanation), dtype=torch.float32, device=device)
@@ -118,9 +119,8 @@ plt.ylabel("Feature")
 plt.title("Global SHAP Feature Importance")
 plt.tight_layout()
 
-plt.savefig("shap_global_importance.png", dpi=300, bbox_inches="tight")
+plt.savefig(SHAP_GLOBAL_IMPORTANCE_PLOT_PATH, dpi=300, bbox_inches="tight")
 
-plt.show()
 
 explanation = shap.Explanation(
     values=shap_values,
@@ -136,7 +136,6 @@ plt.tight_layout()
 
 plt.savefig(SHAP_BEESWARM_PATH, dpi=300, bbox_inches="tight")
 
-plt.show()
 
 
 waterfall_index = int(np.argmax(predictions_cva))
@@ -145,7 +144,7 @@ print("\nWaterfall observation index:", waterfall_index)
 
 print("Predicted CVA:", predictions_cva[waterfall_index])
 
-print("True CVA:", Y_test[waterfall_index])
+print("True CVA:", Y_explanation[waterfall_index])
 
 print("Baseline predicted CVA:", expected_value)
 
@@ -155,4 +154,43 @@ plt.tight_layout()
 
 plt.savefig(SHAP_WATERFALL_PATH, dpi=300, bbox_inches="tight")
 
-plt.show()
+print(
+    "X scaler mean matches:",
+    np.allclose(
+        X_train.mean(axis=0),
+        X_scaler.mean_,
+        rtol=1e-5,
+        atol=1e-6
+    )
+)
+
+print(
+    "X scaler scale matches:",
+    np.allclose(
+        X_train.std(axis=0, ddof=0),
+        X_scaler.scale_,
+        rtol=1e-5,
+        atol=1e-6
+    )
+)
+
+print(
+    "Y scaler mean matches:",
+    np.allclose(
+        Y_train.mean(),
+        Y_scaler.mean_[0],
+        rtol=1e-5,
+        atol=1e-6
+    )
+)
+
+print(
+    "Y scaler scale matches:",
+    np.allclose(
+        Y_train.std(ddof=0),
+        Y_scaler.scale_[0],
+        rtol=1e-5,
+        atol=1e-6
+    )
+)
+
