@@ -1,5 +1,5 @@
 
-from config import NN_MODEL_PATH, CVA_DATASET, CVA_TEST_DATASET, VALIDATION_SIZE, RANDOM_SEED, BACKGROUND_SIZE, EXPLANATION_SIZE
+from config import NN_MODEL_PATH, CVA_DATASET, CVA_TEST_DATASET, VALIDATION_SIZE, RANDOM_SEED, BACKGROUND_SIZE, EXPLANATION_SIZE, NN_SCALERS_PATH
 from model import NeuralNetwork 
 import torch 
 import torch.nn as nn
@@ -16,8 +16,8 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 checkpoint = torch.load(NN_MODEL_PATH, weights_only=False, map_location=device)
 
-X_scaler = joblib.load("nn_scalers.pkl")["scaler_X"]
-Y_scaler = joblib.load("nn_scalers.pkl")["scaler_Y"]
+X_scaler = joblib.load(NN_SCALERS_PATH)["scaler_X"]
+Y_scaler = joblib.load(NN_SCALERS_PATH)["scaler_Y"]
 
 model = NeuralNetwork(
     input_size=checkpoint["input_size"],
