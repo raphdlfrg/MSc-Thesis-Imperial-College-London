@@ -10,8 +10,12 @@ import pandas as pd
 from tqdm import tqdm
 import copy
 from itertools import product
+import joblib
 
-from config import CVA_DATASET, NN_PREDICTIONS_PATH, NN_TRAINING_PATH, PATIENCE_EARLY_STOPPING, VALIDATION_SIZE, RANDOM_SEED, NN_ARCHITECTURE_RESULTS_PATH
+from config import CVA_DATASET, NN_PREDICTIONS_PATH, NN_EPOCHS_LOSS_PATH, PATIENCE_EARLY_STOPPING, VALIDATION_SIZE, RANDOM_SEED, NN_ARCHITECTURE_RESULTS_PATH, NN_MODEL_PATH, NN_SCALERS_PATH
+
+from model import NeuralNetwork
+
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"Using {device} device")
@@ -50,31 +54,10 @@ print(X_train.shape, Y_train.shape)
 print(X_validation.shape, Y_validation.shape)
 
 
-class NeuralNetwork(nn.Module):
-    def __init__(self, input_size=6, hidden_sizes=(64, 64), activation_fn=nn.ELU):
-        super().__init__()
-
-        layers = []
-        prev_size = input_size
-        for hidden_size in hidden_sizes:
-            layers.append(nn.Linear(prev_size, hidden_size))
-            layers.append(activation_fn())
-            prev_size = hidden_size
-
-        layers.append(nn.Linear(prev_size, 1))
-
-        self.network = nn.Sequential(*layers)
-
-    def forward(self, x):
-        predictions = self.network(x)
-        return predictions
-
     
 
 model = NeuralNetwork().to(device)
 print(model)
-
-
 
 
 epochs = 200
@@ -147,21 +130,6 @@ def train_model(model, train_loader, validation_loader, loss_fn=nn.MSELoss(), lr
         "epochs_trained": len(training_losses)
     }
 
-
-architectures = [
-    {
-        "name": "3_layers_64_64_64",
-        "hidden_sizes": [64, 64, 64],
-        "activation": "elu",
-        "learning_rate": 1e-3
-    },
-    {
-        "name": "3_layers_128_64_32",
-        "hidden_sizes": [128, 64, 32],
-        "activation": "elu",
-        "learning_rate": 1e-3
-    }
-]
 
 name = "3_layers_128_64_32"
 
@@ -238,12 +206,25 @@ for lr, batch_size in product(learning_rates, batch_sizes):
 
 results_df = pd.DataFrame(results)
 results_df = results_df.sort_values(by="best_validation_rmse").reset_index(drop=True)
-print(results_df)
 
 results_df.to_csv(NN_ARCHITECTURE_RESULTS_PATH, index=False)
 
 best_config = results_df.loc[0, "config_id"]
 best_model = trained_models[best_config]
+
+checkpoint = {
+    "model_state_dict": best_model.state_dict(),
+    "input_size": 6,
+    "hidden_sizes": hidden_sizes,
+    "activation": "elu",
+    "learning_rate": results_df.loc[0, "learning_rate"],
+    "batch_size": results_df.loc[0, "batch_size"],
+}
+
+torch.save(checkpoint, NN_MODEL_PATH)
+
+joblib.dump({ "scaler_X": scaler_X, "scaler_Y": scaler_Y }, NN_SCALERS_PATH)
+
 
 print(f"Best combination: {best_config}")
 
@@ -258,7 +239,7 @@ loss_df = pd.DataFrame({
     "validation_loss": best_model_validation_losses
 })
 
-loss_df.to_csv(NN_TRAINING_PATH, index=False)
+loss_df.to_csv(NN_EPOCHS_LOSS_PATH, index=False)
 
 best_model.eval()
 
@@ -271,7 +252,10 @@ true_cva = (Y_validation.cpu().numpy() * scaler_Y.scale_ + scaler_Y.mean_).ravel
 
 prediction_df = pd.DataFrame({
     "Predicted_CVA": predicted_cva,
-    "True_CVA": true_cva
+    "True_CVA": true_cva,
+    "Residuals": predicted_cva - true_cva,
+    "Absolute_errors": np.abs(predicted_cva - true_cva),
+    "Squared_errors": (predicted_cva - true_cva) ** 2
 })
 
 prediction_df.to_csv(NN_PREDICTIONS_PATH, index=False)

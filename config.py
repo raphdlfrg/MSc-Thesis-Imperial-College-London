@@ -9,14 +9,18 @@ else:
     ROOT = Path("data")
 
 CVA_DATASET = ROOT / "black_cox_cva_control_timing_results.csv"
-NN_TRAINING_PATH = ROOT / "nn_training.csv"
+
+NN_EPOCHS_LOSS_PATH = ROOT / "nn_epochs_loss.csv"
 NN_PREDICTIONS_PATH = ROOT / "nn_predictions.csv"
+
 NN_RESULTS_METRICS = ROOT / "nn_results_metrics.csv"
-NN_RESULTS_PREDICTIONS_WITH_ERRORS = ROOT / "nn_results_predictions_with_errors.csv"
 NN_ERROR_BY_CVA = ROOT / "error_by_cva_quantile.csv"
 CALIBRATION_BY_DECILE = ROOT / "calibration_by_decile.csv"
 VALIDATION_PLOTS_PATH = ROOT / "validation_plots.png"
+
 NN_ARCHITECTURE_RESULTS_PATH = ROOT / "nn_architecture_results.csv"
+NN_MODEL_PATH = ROOT / "nn_model.pth"
+NN_SCALERS_PATH = ROOT / "nn_scalers.pkl"
 # ---------------------------------------
 # Synthetic Dataset Generation Parameters 
 # ---------------------------------------
