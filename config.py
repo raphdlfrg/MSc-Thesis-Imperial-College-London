@@ -27,6 +27,7 @@ SHAP_GLOBAL_IMPORTANCE_PATH = ROOT / "shap_global_importance.csv"
 SHAP_GLOBAL_IMPORTANCE_PLOT_PATH = ROOT / "shap_global_importance.png"
 SHAP_BEESWARM_PATH = ROOT / "shap_beeswarm.png"
 SHAP_WATERFALL_PATH = ROOT / "shap_waterfall.png"
+SHAP_DEPENDENCE_PATH = ROOT / "shap_dependence_L_over_V0_sigma_v.png"
 # ---------------------------------------
 # Synthetic Dataset Generation Parameters 
 # ---------------------------------------

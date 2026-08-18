@@ -1,5 +1,5 @@
 
-from config import NN_MODEL_PATH, CVA_DATASET, CVA_TEST_DATASET, SHAP_GLOBAL_IMPORTANCE_PATH, SHAP_GLOBAL_IMPORTANCE_PLOT_PATH, SHAP_WATERFALL_PATH, SHAP_BEESWARM_PATH, VALIDATION_SIZE, RANDOM_SEED, BACKGROUND_SIZE, EXPLANATION_SIZE, NN_SCALERS_PATH
+from config import NN_MODEL_PATH, CVA_DATASET, CVA_TEST_DATASET, SHAP_GLOBAL_IMPORTANCE_PATH, SHAP_GLOBAL_IMPORTANCE_PLOT_PATH, SHAP_WATERFALL_PATH, SHAP_BEESWARM_PATH, VALIDATION_SIZE, RANDOM_SEED, BACKGROUND_SIZE, EXPLANATION_SIZE, NN_SCALERS_PATH, SHAP_DEPENDENCE_PATH
 from model import NeuralNetwork 
 import torch 
 import torch.nn as nn
@@ -156,6 +156,27 @@ shap.plots.waterfall(explanation[waterfall_index], max_display=len(feature_names
 plt.tight_layout()
 
 plt.savefig(SHAP_WATERFALL_PATH, dpi=300, bbox_inches="tight")
+
+plt.close()
+
+X_explanation_df = pd.DataFrame(
+    X_explanation,
+    columns=feature_names
+)
+
+shap.dependence_plot(
+    ind="L_over_V0",
+    shap_values=shap_values,
+    features=X_explanation_df,
+    interaction_index="sigma_v",
+    alpha=0.6,
+    dot_size=15
+)
+
+plt.title("Dependence of L/V0 contribution on sigma_v")
+plt.tight_layout()
+
+plt.savefig(SHAP_DEPENDENCE_PATH, dpi=300, bbox_inches="tight")
 
 plt.close()
 
