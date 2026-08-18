@@ -131,12 +131,12 @@ def train_model(model, train_loader, validation_loader, loss_fn=nn.MSELoss(), lr
     }
 
 
-name = "3_layers_128_64_32"
+name = "1_layer_128"
 
 learning_rates = [3e-4, 1e-3]
-batch_sizes = [256]
+batch_sizes = [256, 512]
 
-hidden_sizes = [128, 64, 32]
+hidden_sizes = [128]
 seed = RANDOM_SEED
 
 
