@@ -121,6 +121,8 @@ plt.tight_layout()
 
 plt.savefig(SHAP_GLOBAL_IMPORTANCE_PLOT_PATH, dpi=300, bbox_inches="tight")
 
+plt.close()
+
 
 explanation = shap.Explanation(
     values=shap_values,
@@ -136,6 +138,7 @@ plt.tight_layout()
 
 plt.savefig(SHAP_BEESWARM_PATH, dpi=300, bbox_inches="tight")
 
+plt.close()
 
 
 waterfall_index = int(np.argmax(predictions_cva))
@@ -153,6 +156,8 @@ shap.plots.waterfall(explanation[waterfall_index], max_display=len(feature_names
 plt.tight_layout()
 
 plt.savefig(SHAP_WATERFALL_PATH, dpi=300, bbox_inches="tight")
+
+plt.close()
 
 print(
     "X scaler mean matches:",

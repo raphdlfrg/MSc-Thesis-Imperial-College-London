@@ -246,11 +246,13 @@ best_model.eval()
 with torch.no_grad():
     predicted_scaled = best_model(X_validation.to(device)).cpu().numpy()
 
-predicted_scaled = torch.clamp(torch.tensor(predicted_scaled), min=0.0).numpy()
+
 
 predicted_cva = (predicted_scaled * scaler_Y.scale_ + scaler_Y.mean_).ravel()
 
 true_cva = (Y_validation.cpu().numpy() * scaler_Y.scale_ + scaler_Y.mean_).ravel()
+
+predicted_scaled = torch.clamp(torch.tensor(predicted_cva), min=0.0).numpy()
 
 prediction_df = pd.DataFrame({
     "Predicted_CVA": predicted_cva,
