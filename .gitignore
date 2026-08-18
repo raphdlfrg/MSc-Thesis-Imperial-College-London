@@ -11,5 +11,6 @@ checkpoints/
 *.pt
 
 data/
+deprecated/
 
 .ipynb_checkpoints/
